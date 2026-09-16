@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Fake News Detector</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+
+            background:
+                radial-gradient(circle at 50% 15%, #101b38 0%, #080e1d 42%, #050914 100%);
+
+            color: #e8edf7;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            padding: 30px 15px;
+        }
+
+
+        /* MAIN CARD */
+
+        .app-card {
+            width: 100%;
+            max-width: 760px;
+
+            background: #101827;
+
+            border: 1px solid #1d2940;
+            border-radius: 10px;
+
+            padding: 24px;
+
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.45),
+                0 0 30px rgba(50, 100, 255, 0.04);
+        }
+
+
+        /* HEADER */
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            margin-bottom: 5px;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+
+            border-radius: 9px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-size: 19px;
+            font-weight: bold;
+
+            background: linear-gradient(
+                135deg,
+                #3487ff,
+                #7257f5
+            );
+
+            box-shadow: 0 0 18px rgba(70, 110, 255, 0.25);
+        }
+
+        .header-text h1 {
+            font-size: 18px;
+            margin: 0 0 3px;
+            font-weight: 650;
+        }
+
+        .header-text p {
+            margin: 0;
+
+            color: #8491a7;
+            font-size: 12px;
+        }
+
+
+        /* FORM */
+
+        .form {
+            margin-top: 25px;
+        }
+
+        label {
+            display: block;
+
+            color: #aab5c8;
+
+            font-size: 12px;
+            font-weight: 500;
+
+            margin-bottom: 7px;
+        }
+
+        .optional {
+            color: #68758b;
+            font-weight: normal;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+
+            border: 1px solid #202d43;
+            border-radius: 6px;
+
+            background: #0c1422;
+
+            color: #e9eef8;
+
+            padding: 11px 12px;
+
+            font-family: inherit;
+            font-size: 13px;
+
+            outline: none;
+
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        input {
+            margin-bottom: 18px;
+        }
+
+        textarea {
+            height: 190px;
+            resize: vertical;
+
+            margin-bottom: 14px;
+
+            line-height: 1.5;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #536176;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: #556cff;
+
+            box-shadow:
+                0 0 0 2px rgba(83, 103, 255, 0.10);
+        }
+
+
+        /* ACTION ROW */
+
+        .action-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+
+            margin-bottom: 20px;
+        }
+
+        button {
+            border: none;
+            border-radius: 6px;
+
+            padding: 9px 16px;
+
+            background: linear-gradient(
+                90deg,
+                #6557e8,
+                #3788ff
+            );
+
+            color: white;
+
+            font-size: 12px;
+            font-weight: 600;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+
+            box-shadow:
+                0 4px 14px rgba(68, 104, 255, 0.25);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .privacy-text {
+            color: #69778d;
+            font-size: 11px;
+        }
+
+
+        /* RESULT */
+
+        #result {
+            display: none;
+
+            background: #151f30;
+
+            border: 1px solid #202c42;
+            border-radius: 7px;
+
+            padding: 16px;
+        }
+
+        .result-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            gap: 15px;
+
+            margin-bottom: 12px;
+        }
+
+        #prediction {
+            display: inline-flex;
+            align-items: center;
+
+            padding: 5px 10px;
+
+            border-radius: 20px;
+
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        #confidence {
+            margin: 0;
+
+            color: #9ba8ba;
+
+            font-size: 11px;
+        }
+
+
+        /* REAL */
+
+        .real #prediction {
+            color: #62e7b0;
+
+            background: rgba(46, 204, 145, 0.12);
+
+            border: 1px solid rgba(46, 204, 145, 0.2);
+        }
+
+
+        /* FAKE */
+
+        .fake #prediction {
+            color: #ff7185;
+
+            background: rgba(255, 79, 105, 0.11);
+
+            border: 1px solid rgba(255, 79, 105, 0.2);
+        }
+
+
+        /* CONFIDENCE BAR */
+
+        .confidence-track {
+            width: 100%;
+            height: 7px;
+
+            background: #263146;
+
+            border-radius: 20px;
+
+            overflow: hidden;
+        }
+
+        #confidenceBar {
+            width: 0%;
+            height: 100%;
+
+            border-radius: 20px;
+
+            transition: width 0.6s ease;
+        }
+
+        .real #confidenceBar {
+            background: linear-gradient(
+                90deg,
+                #53d99e,
+                #64dbe4
+            );
+        }
+
+        .fake #confidenceBar {
+            background: linear-gradient(
+                90deg,
+                #ff637a,
+                #ff8b99
+            );
+        }
+
+
+        /* ERROR */
+
+        .error {
+            border-color: rgba(255, 188, 82, 0.35) !important;
+        }
+
+        .error #prediction {
+            color: #ffc76c;
+
+            background: rgba(255, 190, 80, 0.1);
+
+            border: 1px solid rgba(255, 190, 80, 0.2);
+        }
+
+
+        /* FOOTER */
+
+        .footer {
+            text-align: center;
+
+            color: #59667a;
+
+            font-size: 10px;
+
+            margin-top: 18px;
+        }
+
+
+        /* MOBILE */
+
+        @media (max-width: 600px) {
+
+            body {
+                align-items: flex-start;
+                padding-top: 25px;
+            }
+
+            .app-card {
+                padding: 18px;
+            }
+
+            textarea {
+                height: 220px;
+            }
+
+            .action-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .result-top {
+                align-items: flex-start;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="app-card">
+
+
+    <!-- HEADER -->
+
+    <div class="app-header">
+
+        <div class="logo">
+            ✦
+        </div>
+
+        <div class="header-text">
+
+            <h1>Fake News Detector</h1>
+
+            <p>
+                Paste an article and get a quick AI-powered credibility prediction.
+            </p>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- FORM -->
+
+    <div class="form">
+
+
+        <label for="title">
+            Article Title
+            <span class="optional">(optional)</span>
+        </label>
+
+        <input
+            id="title"
+            type="text"
+            placeholder="Enter the news headline"
+        >
+
+
+
+        <label for="article">
+            Article Text
+            <span class="optional">(required)</span>
+        </label>
+
+        <textarea
+            id="article"
+            placeholder="Paste the news article here..."
+        ></textarea>
+
+
+
+        <div class="action-row">
+
+            <button
+                id="analyzeButton"
+                onclick="checkNews()"
+            >
+                Analyze Article
+            </button>
+
+            <span class="privacy-text">
+                AI-powered analysis using BERT + Logistic Regression
+            </span>
+
+        </div>
+
+
+
+        <!-- RESULT -->
+
+        <div id="result">
+
+
+            <div class="result-top">
+
+                <div id="prediction">
+                </div>
+
+                <p id="confidence">
+                </p>
+
+            </div>
+
+
+            <div class="confidence-track">
+
+                <div id="confidenceBar">
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+
+
+</div>
+
+
+
+<script>
+
+
+async function checkNews() {
+
+
+    const title =
+        document.getElementById("title").value;
+
+
+    const article =
+        document.getElementById("article").value;
+
+
+    const resultBox =
+        document.getElementById("result");
+
+
+    const predictionText =
+        document.getElementById("prediction");
+
+
+    const confidenceText =
+        document.getElementById("confidence");
+
+
+    const confidenceBar =
+        document.getElementById("confidenceBar");
+
+
+    const button =
+        document.getElementById("analyzeButton");
+
+
+
+    /* REQUIRE ARTICLE TEXT */
+
+    if (!article.trim()) {
+
+
+        resultBox.style.display = "block";
+
+        resultBox.className = "error";
+
+
+        predictionText.innerText =
+            "Please enter article text";
+
+
+        confidenceText.innerText = "";
+
+
+        confidenceBar.style.width =
+            "0%";
+
+
+        return;
+
+    }
+
+
+
+    /* ANALYZING STATE */
+
+    resultBox.style.display =
+        "block";
+
+
+    resultBox.className = "";
+
+
+    predictionText.innerText =
+        "Analyzing...";
+
+
+    confidenceText.innerText =
+        "";
+
+
+    confidenceBar.style.width =
+        "0%";
+
+
+    button.innerText =
+        "Analyzing...";
+
+
+    button.disabled =
+        true;
+
+
+
+    try {
+
+
+        const response =
+            await fetch("/predict", {
+
+
+                method: "POST",
+
+
+                headers: {
+
+                    "Content-Type":
+                        "application/json"
+
+                },
+
+
+                body: JSON.stringify({
+
+                    title: title,
+
+                    article: article
+
+                })
+
+
+            });
+
+
+
+        const data =
+            await response.json();
+
+
+
+        /* ERROR FROM BACKEND */
+
+        if (data.error) {
+
+
+            resultBox.className =
+                "error";
+
+
+            predictionText.innerText =
+                data.error;
+
+
+            confidenceText.innerText =
+                "";
+
+
+            confidenceBar.style.width =
+                "0%";
+
+
+            return;
+
+        }
+
+
+
+        /* DISPLAY RESULT */
+
+        if (data.prediction === "REAL NEWS") {
+
+
+            predictionText.innerText =
+                "REAL";
+
+
+            resultBox.className =
+                "real";
+
+
+        }
+
+        else {
+
+
+            predictionText.innerText =
+                "FAKE";
+
+
+            resultBox.className =
+                "fake";
+
+
+        }
+
+
+
+        confidenceText.innerText =
+            "Confidence: " +
+            data.confidence +
+            "%";
+
+
+
+        confidenceBar.style.width =
+            data.confidence + "%";
+
+
+    }
+
+
+    catch (error) {
+
+
+        resultBox.className =
+            "error";
+
+
+        predictionText.innerText =
+            "Unable to analyze article";
+
+
+        confidenceText.innerText =
+            "";
+
+
+        confidenceBar.style.width =
+            "0%";
+
+
+    }
+
+
+    finally {
+
+
+        button.innerText =
+            "Analyze Article";
+
+
+        button.disabled =
+            false;
+
+
+    }
+
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
