@@ -7,7 +7,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 
 # =========================================================
-# PAGE SETTINGS
+# PAGE CONFIGURATION
 # =========================================================
 
 st.set_page_config(
@@ -21,8 +21,12 @@ st.set_page_config(
 # =========================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Logistic Regression / TF-IDF files are stored in GitHub
 MODEL_FOLDER = os.path.join(BASE_DIR, "fake_news_hybrid")
-BERT_FOLDER = os.path.join(MODEL_FOLDER, "bert_model")
+
+# BERT model is stored on Hugging Face
+BERT_MODEL = "Reemalz/fake-news"
 
 MAX_LENGTH = 256
 
@@ -34,12 +38,15 @@ MAX_LENGTH = 256
 @st.cache_resource
 def load_models():
 
-    tokenizer = AutoTokenizer.from_pretrained(BERT_FOLDER)
+    # Load tokenizer from Hugging Face
+    tokenizer = AutoTokenizer.from_pretrained(BERT_MODEL)
 
+    # Load trained BERT model from Hugging Face
     bert_model = AutoModelForSequenceClassification.from_pretrained(
-        BERT_FOLDER
+        BERT_MODEL
     )
 
+    # Use GPU if available, otherwise CPU
     device = torch.device(
         "cuda" if torch.cuda.is_available() else "cpu"
     )
@@ -47,6 +54,7 @@ def load_models():
     bert_model.to(device)
     bert_model.eval()
 
+    # Load TF-IDF vectorizer
     tfidf_vectorizer = joblib.load(
         os.path.join(
             MODEL_FOLDER,
@@ -54,6 +62,7 @@ def load_models():
         )
     )
 
+    # Load Logistic Regression model
     lr_model = joblib.load(
         os.path.join(
             MODEL_FOLDER,
@@ -61,6 +70,7 @@ def load_models():
         )
     )
 
+    # Load ensemble configuration
     config = joblib.load(
         os.path.join(
             MODEL_FOLDER,
@@ -88,10 +98,7 @@ def load_models():
 ) = load_models()
 
 
-# =========================================================
-# MODEL WEIGHTS
-# =========================================================
-
+# Ensemble weights
 BERT_WEIGHT = config.get("bert_weight", 0.5)
 LR_WEIGHT = config.get("lr_weight", 0.5)
 
@@ -102,9 +109,9 @@ LR_WEIGHT = config.get("lr_weight", 0.5)
 
 def predict_news(title, article):
 
-    # -------------------------
-    # BERT
-    # -------------------------
+    # -----------------------------
+    # BERT prediction
+    # -----------------------------
 
     inputs = tokenizer(
         title,
@@ -130,9 +137,9 @@ def predict_news(title, article):
         ).cpu().numpy()[0]
 
 
-    # -------------------------
-    # LOGISTIC REGRESSION
-    # -------------------------
+    # -----------------------------
+    # Logistic Regression prediction
+    # -----------------------------
 
     combined_text = title + " " + article
 
@@ -145,9 +152,9 @@ def predict_news(title, article):
     )[0]
 
 
-    # -------------------------
-    # ENSEMBLE
-    # -------------------------
+    # -----------------------------
+    # Hybrid Ensemble
+    # -----------------------------
 
     final_probs = (
         BERT_WEIGHT * bert_probs
@@ -164,10 +171,9 @@ def predict_news(title, article):
     ) * 100
 
 
-    # Correct WELFake label mapping:
-    # 0 = REAL
-    # 1 = FAKE
-
+    # IMPORTANT:
+    # This is the mapping that worked
+    # in your previous testing.
     if prediction == 0:
         result = "REAL"
     else:
@@ -185,6 +191,7 @@ st.markdown(
 <style>
 
 /* Background */
+
 .stApp {
     background:
         radial-gradient(
@@ -197,6 +204,7 @@ st.markdown(
 
 
 /* Main container */
+
 .block-container {
     max-width: 760px;
     padding-top: 5rem;
@@ -204,58 +212,66 @@ st.markdown(
 }
 
 
-/* Hide Streamlit menu */
+/* Hide Streamlit elements */
+
 #MainMenu {
     visibility: hidden;
 }
 
-
-/* Hide Streamlit footer */
 footer {
     visibility: hidden;
 }
 
-
-/* Hide Streamlit decoration */
 [data-testid="stDecoration"] {
     display: none;
 }
 
 
 /* Labels */
+
 label {
     color: #d7deea !important;
     font-weight: 500 !important;
 }
 
 
-/* Text input */
+/* Title input */
+
 div[data-testid="stTextInput"] input {
+
     background-color: #0d1525;
     color: white;
+
     border: 1px solid #27344c;
     border-radius: 7px;
 }
 
 
-/* Text area */
+/* Article text */
+
 div[data-testid="stTextArea"] textarea {
+
     background-color: #0d1525;
     color: white;
+
     border: 1px solid #27344c;
     border-radius: 7px;
+
     min-height: 190px;
 }
 
 
 /* Placeholder */
+
 input::placeholder,
 textarea::placeholder {
+
     color: #68758a !important;
 }
 
 
-/* Button */
+/* Analyze button */
+
 div.stButton > button {
 
     background:
@@ -268,13 +284,11 @@ div.stButton > button {
     color: white;
 
     border: none;
-
     border-radius: 7px;
 
     padding: 9px 22px;
 
     font-size: 14px;
-
     font-weight: 600;
 }
 
@@ -282,7 +296,6 @@ div.stButton > button {
 div.stButton > button:hover {
 
     color: white;
-
     border: none;
 
     box-shadow:
@@ -292,6 +305,7 @@ div.stButton > button:hover {
 
 
 div.stButton > button:focus {
+
     color: white;
     border: none;
 }
@@ -307,7 +321,11 @@ div.stButton > button:focus {
 # =========================================================
 
 header_html = (
-    '<div style="display:flex; align-items:center; gap:12px; '
+
+    '<div style="'
+    'display:flex; '
+    'align-items:center; '
+    'gap:12px; '
     'margin-bottom:28px;">'
 
     '<div style="'
@@ -321,7 +339,9 @@ header_html = (
     'justify-content:center; '
     'font-size:20px; '
     'color:white;">'
+
     '✦'
+
     '</div>'
 
     '<div>'
@@ -330,20 +350,25 @@ header_html = (
     'color:#f0f4ff; '
     'font-size:20px; '
     'font-weight:650;">'
+
     'Fake News Detector'
+
     '</div>'
 
     '<div style="'
     'color:#8491a7; '
     'font-size:12px; '
     'margin-top:3px;">'
+
     'AI-powered news credibility prediction'
+
     '</div>'
 
     '</div>'
 
     '</div>'
 )
+
 
 st.markdown(
     header_html,
@@ -352,7 +377,7 @@ st.markdown(
 
 
 # =========================================================
-# INPUTS
+# USER INPUT
 # =========================================================
 
 title = st.text_input(
@@ -367,10 +392,6 @@ article = st.text_area(
 )
 
 
-# =========================================================
-# ANALYZE BUTTON
-# =========================================================
-
 analyze = st.button(
     "Analyze Article",
     use_container_width=True
@@ -378,7 +399,7 @@ analyze = st.button(
 
 
 # =========================================================
-# RESULT
+# PREDICTION RESULT
 # =========================================================
 
 if analyze:
@@ -408,6 +429,7 @@ if analyze:
         if result == "REAL":
 
             real_html = (
+
                 '<div style="'
                 'margin-top:20px; '
                 'background:#0e1922; '
@@ -427,13 +449,17 @@ if analyze:
                 'border-radius:20px; '
                 'font-size:13px; '
                 'font-weight:700;">'
+
                 'REAL NEWS'
+
                 '</span>'
 
                 '<span style="'
                 'color:#dce5ef; '
                 'font-size:14px;">'
+
                 f'Confidence: <b>{confidence:.2f}%</b>'
+
                 '</span>'
 
                 '</div>'
@@ -457,6 +483,7 @@ if analyze:
                 '</div>'
             )
 
+
             st.markdown(
                 real_html,
                 unsafe_allow_html=True
@@ -470,6 +497,7 @@ if analyze:
         else:
 
             fake_html = (
+
                 '<div style="'
                 'margin-top:20px; '
                 'background:#1a111a; '
@@ -489,13 +517,17 @@ if analyze:
                 'border-radius:20px; '
                 'font-size:13px; '
                 'font-weight:700;">'
+
                 'FAKE NEWS'
+
                 '</span>'
 
                 '<span style="'
                 'color:#dce5ef; '
                 'font-size:14px;">'
+
                 f'Confidence: <b>{confidence:.2f}%</b>'
+
                 '</span>'
 
                 '</div>'
@@ -518,6 +550,7 @@ if analyze:
 
                 '</div>'
             )
+
 
             st.markdown(
                 fake_html,
